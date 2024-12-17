@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  vajra_db_mysql:
+    image: mysql:8.0
+    container_name: vajra_db_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: vajra_network
+    volumes:
+      - ./sql_files:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - vajra_network
+
+  vajra_db_postgresql:
+    image: postgres:13
+    container_name: vajra_db_postgresql
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: vajra_network
+    volumes:
+      - ./sql_files:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - vajra_network
+
+  vajra_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vajra_app
+    depends_on:
+      - vajra_db_mysql
+      - vajra_db_postgresql
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_APP: main.py
+      FLASK_ENV: development
+    volumes:
+      - .:/app
+    networks:
+      - vajra_network
+
+  vajra_ui:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: vajra_ui
+    ports:
+      - "8080:80"
+    networks:
+      - vajra_network
+
+networks:
+  vajra_network:
+    driver: bridge
